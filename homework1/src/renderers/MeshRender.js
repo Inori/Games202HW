@@ -173,7 +173,7 @@ class MeshRender {
 		}
 	}
 
-	draw(camera) {
+	draw(camera, vtxCount) {
 		const gl = this.gl;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.material.frameBuffer);
@@ -197,7 +197,16 @@ class MeshRender {
 
 		// Draw
 		{
-			const vertexCount = this.mesh.count;
+			let vertexCount = 0;
+			if (vtxCount == null)
+			{
+				vertexCount = this.mesh.count;
+			}
+			else
+			{
+				vertexCount = vtxCount;
+			}
+			
 			const type = gl.UNSIGNED_SHORT;
 			const offset = 0;
 			gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);

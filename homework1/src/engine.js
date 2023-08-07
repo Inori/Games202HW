@@ -16,11 +16,11 @@ function GAMES202Main() {
 		alert('Unable to initialize WebGL. Your browser or machine may not support it.');
 		return;
 	}
-
+	
 	// Add camera
 	const camera = new THREE.PerspectiveCamera(75, gl.canvas.clientWidth / gl.canvas.clientHeight, 1e-2, 1000);
 	camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
-
+	
 	// Add resize listener
 	function setSize(width, height) {
 		camera.aspect = width / height;
@@ -28,7 +28,7 @@ function GAMES202Main() {
 	}
 	setSize(canvas.clientWidth, canvas.clientHeight);
 	window.addEventListener('resize', () => setSize(canvas.clientWidth, canvas.clientHeight));
-
+	
 	// Add camera control
 	const cameraControls = new THREE.OrbitControls(camera, canvas);
 	cameraControls.enableZoom = true;
@@ -49,7 +49,6 @@ function GAMES202Main() {
 	let lightUp = [0, 1, 0]
 	const directionLight = new DirectionalLight(5000, [1, 1, 1], lightPos, focalPoint, lightUp, true, renderer.gl);
 	renderer.addLight(directionLight);
-
 	// Add shapes
 	
 	let floorTransform = setTransform(0, 0, -30, 4, 4, 4);

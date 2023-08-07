@@ -1,0 +1,8 @@
+{
+    "compilerOptions": {
+      "module": "commonjs",
+      "target": "es6"
+    },
+    "exclude": ["assets"],
+    "include": ["lib/*", "src/**/*"]
+}

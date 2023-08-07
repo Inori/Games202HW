@@ -20,6 +20,9 @@ varying highp vec3 vNormal;
 #define PCF_NUM_SAMPLES NUM_SAMPLES
 #define NUM_RINGS 10
 
+#define Z_NEAR -0.1
+#define Z_FAR -300.0
+
 #define EPS 1e-3
 #define PI 3.141592653589793
 #define PI2 6.283185307179586
@@ -105,7 +108,17 @@ float PCSS(sampler2D shadowMap, vec4 coords){
 
 
 float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
-  return 1.0;
+  // interpolate coord
+  float shadowU = (shadowCoord.x + 1.0) * 0.5;
+  float shadowV = (shadowCoord.y + 1.0) * 0.5;
+  vec2 uv = vec2(shadowU, shadowV);
+
+  // blocker to light
+  float distanceBlocker = unpack(texture2D(shadowMap, uv));
+  // shading point to light 
+  //float distanceShPoint = (shadowCoord.z * (Z_FAR - Z_NEAR) + (Z_FAR + Z_NEAR)) / -2.0;
+  float distanceShPoint = shadowCoord.z;
+  return distanceShPoint > distanceBlocker ? 1.0 : 0.0;
 }
 
 vec3 blinnPhong() {
@@ -133,13 +146,38 @@ vec3 blinnPhong() {
 
 void main(void) {
 
-  float visibility;
-  //visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
-  //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
-  //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
+  float visibility = 0.0;
+
+  visibility = useShadowMap(uShadowMap, vPositionFromLight);
 
   vec3 phongColor = blinnPhong();
 
-  //gl_FragColor = vec4(phongColor * visibility, 1.0);
-  gl_FragColor = vec4(phongColor, 1.0);
+  gl_FragColor = vec4(phongColor * visibility, 1.0);
+
+
+  // interpolate coord
+  float shadowU = (vPositionFromLight.x + 1.0) * 0.5;
+  float shadowV = (vPositionFromLight.y + 1.0) * 0.5;
+  vec2 uv = vec2(shadowU, shadowV);
+
+  // blocker to light
+  //float detph = unpack(texture2D(uShadowMap, uv));
+
+  //gl_FragColor = vec4(phongColor, 1.0);
+  //gl_FragColor = vec4(color, color, color, 1.0);
+  // if (color > 0.0 && color < 1.0)
+  // {
+  //   gl_FragColor = vec4(vec3(1.0, 0.0, 0.0), 1.0);
+  // }
+  // else if (color > 1.0)
+  // {
+  //   gl_FragColor = vec4(vec3(0.0, 1.0, 0.0), 1.0);
+  // }
+  // else
+  // {
+  //   gl_FragColor = vec4(vec3(0.0, 0.0, 1.0), 1.0);
+  // }
+
+  //detph = (detph + 1.0) * 0.5;
+  //gl_FragColor = vec4(detph, detph, detph, 1.0);
 }

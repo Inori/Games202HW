@@ -11,7 +11,13 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 			console.log('model ' + Math.round(percentComplete, 2) + '% downloaded');
 		}
 	}
-	function onError() { }
+	function onError() {
+		console.log("model load error.");
+	 }
+
+	function sleep(ms) {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
 
 	new THREE.MTLLoader(manager)
 		.setPath(path)
