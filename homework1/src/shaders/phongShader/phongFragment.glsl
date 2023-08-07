@@ -161,7 +161,7 @@ void main(void) {
   vec2 uv = vec2(shadowU, shadowV);
 
   // blocker to light
-  //float detph = unpack(texture2D(uShadowMap, uv));
+  float detph = texture2D(uShadowMap, uv).a;
 
   //gl_FragColor = vec4(phongColor, 1.0);
   //gl_FragColor = vec4(color, color, color, 1.0);
@@ -178,6 +178,6 @@ void main(void) {
   //   gl_FragColor = vec4(vec3(0.0, 0.0, 1.0), 1.0);
   // }
 
-  //detph = (detph + 1.0) * 0.5;
-  //gl_FragColor = vec4(detph, detph, detph, 1.0);
+  detph = (detph + 1.0) * 0.5;
+  gl_FragColor = vec4(detph, detph, detph, 1.0);
 }

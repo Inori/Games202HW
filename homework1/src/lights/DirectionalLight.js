@@ -23,16 +23,15 @@ class DirectionalLight {
         let modelMatrix = mat4.create();
         let viewMatrix = mat4.create();
         let projectionMatrix = mat4.create();
-        let modelView = mat4.create();
         
         // Model transform
         //mat4.fromRotationTranslationScale(modelMatrix, quat.create(), this.lightPos, mat4.create());
-        mat4.fromTranslation(modelMatrix, translate);
+        mat4.fromTranslation(modelMatrix, this.lightPos);
         // View transform
         mat4.lookAt(viewMatrix, this.lightPos, this.focalPoint, this.lightUp);
         // Projection transform
         const edge = 80.0;
-        mat4.ortho(projectionMatrix, -edge, edge, -edge, edge, -0.10, -300.0);
+        mat4.ortho(projectionMatrix, -edge, edge, -edge, edge, 0.10, 200.0);
         //const canvas = document.querySelector('#glcanvas');
         //const gl = canvas.getContext('webgl');
         //mat4.perspective(projectionMatrix, Math.PI/2.0, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.01, 1000);
