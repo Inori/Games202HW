@@ -15,11 +15,11 @@ varying highp vec3 vFragPos;
 varying highp vec3 vNormal;
 
 // Shadow map related variables
-#define NUM_SAMPLES 100
+#define NUM_SAMPLES 20
 #define BLOCKER_SEARCH_NUM_SAMPLES NUM_SAMPLES
 #define PCF_NUM_SAMPLES NUM_SAMPLES
 #define NUM_RINGS 10
-#define LIGHT_SIZE 100.0
+#define LIGHT_SIZE 20.0
 
 #define EPS 1e-3
 #define PI 3.141592653589793
@@ -104,18 +104,19 @@ float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
   return distanceShPoint + EPS > distanceBlocker + bias? 0.0 : 1.0;
 }
 
+
 float PCF(sampler2D shadowMap, vec4 coords) {
+  vec3 shadowCoordNDC = (vPositionFromLight.xyz / vPositionFromLight.w + 1.0) / 2.0;
   // interpolate coord
-  float shadowU = (coords.x + 1.0) * 0.5;
-  float shadowV = (coords.y + 1.0) * 0.5;
-  vec2 uv = vec2(shadowU, shadowV);
+
+  vec2 uv = shadowCoordNDC.xy;
 
   const float pixelRadius = 10.0;
   const float resolution = 2048.0;
   
   // generate random values
   //uniformDiskSamples(uv);
-  poissonDiskSamples(uv);
+  
 
   float inShadowSum = 0.0;
   for (int i = 0; i != PCF_NUM_SAMPLES; i += 1)
@@ -125,10 +126,11 @@ float PCF(sampler2D shadowMap, vec4 coords) {
     // blocker to light
     float depth = unpack(texture2D(shadowMap, randomUV));
     // viewport to ndc
-    float distanceBlocker = depth * 2.0 - 1.0;
+    //float distanceBlocker = depth * 2.0 - 1.0;
+    float distanceBlocker = depth;
 
     // shading point to light 
-    float distanceShPoint = coords.z;
+    float distanceShPoint = shadowCoordNDC.z;
     // depth bias
     float bias = 0.01;
     // count in shadow
@@ -154,7 +156,7 @@ float findBlocker( sampler2D shadowMap,  vec2 uv, float zReceiver ) {
   //   return 0.0;
   // }
 
-  const float pixelRadius = 20.0;
+  const float pixelRadius = 10.0;
   const float resolution = 2048.0;
 
   float zBlockerSum = 0.0;
@@ -180,8 +182,7 @@ float PCSS(sampler2D shadowMap, vec4 coords){
   vec2 uv = vec2(shadowU, shadowV);
 
   // generate random values
-   //uniformDiskSamples(uv);
-  poissonDiskSamples(uv);
+  uniformDiskSamples(uv);
 
   float depthShPoint = coords.z;
 
@@ -245,12 +246,12 @@ vec3 blinnPhong() {
 }
 
 void main(void) {
-
+  poissonDiskSamples(vTextureCoord);
   float visibility = 0.0;
 
   //visibility = useShadowMap(uShadowMap, vPositionFromLight);
-  //visibility = PCF(uShadowMap, vPositionFromLight);
-  visibility = PCSS(uShadowMap, vPositionFromLight);
+  visibility = PCF(uShadowMap, vPositionFromLight);
+  //visibility = PCSS(uShadowMap, vPositionFromLight);
 
   vec3 phongColor = blinnPhong();
 
