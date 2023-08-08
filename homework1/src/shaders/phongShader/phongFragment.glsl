@@ -20,9 +20,6 @@ varying highp vec3 vNormal;
 #define PCF_NUM_SAMPLES NUM_SAMPLES
 #define NUM_RINGS 10
 
-#define Z_NEAR -0.1
-#define Z_FAR -300.0
-
 #define EPS 1e-3
 #define PI 3.141592653589793
 #define PI2 6.283185307179586
@@ -66,6 +63,7 @@ void poissonDiskSamples( const in vec2 randomSeed ) {
   }
 }
 
+// return sample point in unit sphere
 void uniformDiskSamples( const in vec2 randomSeed ) {
 
   float randNum = rand_2to1(randomSeed);
@@ -86,26 +84,6 @@ void uniformDiskSamples( const in vec2 randomSeed ) {
   }
 }
 
-float findBlocker( sampler2D shadowMap,  vec2 uv, float zReceiver ) {
-	return 1.0;
-}
-
-float PCF(sampler2D shadowMap, vec4 coords) {
-  return 1.0;
-}
-
-float PCSS(sampler2D shadowMap, vec4 coords){
-
-  // STEP 1: avgblocker depth
-
-  // STEP 2: penumbra size
-
-  // STEP 3: filtering
-  
-  return 1.0;
-
-}
-
 
 float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
   // interpolate coord
@@ -124,6 +102,59 @@ float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
   float bias = 0.01;
   return distanceShPoint + EPS > distanceBlocker + bias? 0.0 : 1.0;
 }
+
+float PCF(sampler2D shadowMap, vec4 coords) {
+  // interpolate coord
+  float shadowU = (coords.x + 1.0) * 0.5;
+  float shadowV = (coords.y + 1.0) * 0.5;
+  vec2 uv = vec2(shadowU, shadowV);
+
+  const float pixelRadius = 5.0;
+  const float resolution = 2048.0;
+  
+  // generate random values
+  uniformDiskSamples(uv);
+  //poissonDiskSamples(uv);
+
+  float inShadowSum = 0.0;
+  for (int i = 0; i != NUM_SAMPLES; i += 1)
+  {
+    // random uv
+    vec2 randomUV = uv + (pixelRadius / resolution) * poissonDisk[i];
+    // blocker to light
+    float depth = unpack(texture2D(shadowMap, randomUV));
+    // viewport to ndc
+    float distanceBlocker = depth * 2.0 - 1.0;
+
+    // shading point to light 
+    float distanceShPoint = coords.z;
+    // depth bias
+    float bias = 0.01;
+    // 
+    float inShadow = distanceShPoint + EPS > distanceBlocker + bias? 1.0 : 0.0;
+    inShadowSum += inShadow;
+  }
+
+  float visibility = 1.0 - inShadowSum / float(NUM_SAMPLES);
+  return visibility;
+}
+
+float findBlocker( sampler2D shadowMap,  vec2 uv, float zReceiver ) {
+	return 1.0;
+}
+
+float PCSS(sampler2D shadowMap, vec4 coords){
+
+  // STEP 1: avgblocker depth
+
+  // STEP 2: penumbra size
+
+  // STEP 3: filtering
+  
+  return 1.0;
+
+}
+
 
 vec3 blinnPhong() {
   vec3 color = texture2D(uSampler, vTextureCoord).rgb;
@@ -152,7 +183,8 @@ void main(void) {
 
   float visibility = 0.0;
 
-  visibility = useShadowMap(uShadowMap, vPositionFromLight);
+  //visibility = useShadowMap(uShadowMap, vPositionFromLight);
+  visibility = PCF(uShadowMap, vPositionFromLight);
 
   vec3 phongColor = blinnPhong();
 
