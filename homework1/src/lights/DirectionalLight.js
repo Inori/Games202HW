@@ -1,5 +1,5 @@
 
-//const { vec4, mat4 } = require("../../lib/gl-matrix");
+//const { vec4, mat4, vec3 } = require("../../lib/gl-matrix");
 
 class DirectionalLight {
 
@@ -25,16 +25,13 @@ class DirectionalLight {
         let projectionMatrix = mat4.create();
         
         // Model transform
-        //mat4.fromRotationTranslationScale(modelMatrix, quat.create(), this.lightPos, mat4.create());
-        mat4.fromTranslation(modelMatrix, this.lightPos);
+        mat4.translate(modelMatrix, modelMatrix, translate);
+        mat4.scale(modelMatrix, modelMatrix, scale);
+
         // View transform
         mat4.lookAt(viewMatrix, this.lightPos, this.focalPoint, this.lightUp);
         // Projection transform
-        const edge = 80.0;
-        mat4.ortho(projectionMatrix, -edge, edge, -edge, edge, 0.10, 200.0);
-        //const canvas = document.querySelector('#glcanvas');
-        //const gl = canvas.getContext('webgl');
-        //mat4.perspective(projectionMatrix, Math.PI/2.0, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.01, 1000);
+        mat4.ortho(projectionMatrix, -120.0, 120.0, -100.0, 100.0, 0.01, 300);
 
         mat4.multiply(lightMVP, projectionMatrix, viewMatrix);
         mat4.multiply(lightMVP, lightMVP, modelMatrix);

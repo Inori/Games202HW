@@ -114,11 +114,13 @@ float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
   vec2 uv = vec2(shadowU, shadowV);
 
   // blocker to light
-  float distanceBlocker = unpack(texture2D(shadowMap, uv));
+  //float distanceBlocker = unpack(texture2D(shadowMap, uv));
+  float distanceBlocker = texture2D(shadowMap, uv).r;
   // shading point to light 
   //float distanceShPoint = (shadowCoord.z * (Z_FAR - Z_NEAR) + (Z_FAR + Z_NEAR)) / -2.0;
-  float distanceShPoint = shadowCoord.z;
-  return distanceShPoint > distanceBlocker ? 1.0 : 0.0;
+  float distanceShPoint = (shadowCoord.z + 1.0) * 0.5;
+  float bias = 0.01;
+  return distanceShPoint + EPS > distanceBlocker + bias? 0.0 : 1.0;
 }
 
 vec3 blinnPhong() {
@@ -153,31 +155,4 @@ void main(void) {
   vec3 phongColor = blinnPhong();
 
   gl_FragColor = vec4(phongColor * visibility, 1.0);
-
-
-  // interpolate coord
-  float shadowU = (vPositionFromLight.x + 1.0) * 0.5;
-  float shadowV = (vPositionFromLight.y + 1.0) * 0.5;
-  vec2 uv = vec2(shadowU, shadowV);
-
-  // blocker to light
-  float detph = texture2D(uShadowMap, uv).a;
-
-  //gl_FragColor = vec4(phongColor, 1.0);
-  //gl_FragColor = vec4(color, color, color, 1.0);
-  // if (color > 0.0 && color < 1.0)
-  // {
-  //   gl_FragColor = vec4(vec3(1.0, 0.0, 0.0), 1.0);
-  // }
-  // else if (color > 1.0)
-  // {
-  //   gl_FragColor = vec4(vec3(0.0, 1.0, 0.0), 1.0);
-  // }
-  // else
-  // {
-  //   gl_FragColor = vec4(vec3(0.0, 0.0, 1.0), 1.0);
-  // }
-
-  detph = (detph + 1.0) * 0.5;
-  gl_FragColor = vec4(detph, detph, detph, 1.0);
 }
