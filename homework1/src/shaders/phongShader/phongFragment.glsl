@@ -114,11 +114,13 @@ float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
   vec2 uv = vec2(shadowU, shadowV);
 
   // blocker to light
-  //float distanceBlocker = unpack(texture2D(shadowMap, uv));
-  float distanceBlocker = texture2D(shadowMap, uv).r;
+  float depth = unpack(texture2D(shadowMap, uv));
+  // viewport to ndc
+  float distanceBlocker = depth * 2.0 - 1.0;
+
   // shading point to light 
-  //float distanceShPoint = (shadowCoord.z * (Z_FAR - Z_NEAR) + (Z_FAR + Z_NEAR)) / -2.0;
-  float distanceShPoint = (shadowCoord.z + 1.0) * 0.5;
+  float distanceShPoint = shadowCoord.z;
+  // depth bias
   float bias = 0.01;
   return distanceShPoint + EPS > distanceBlocker + bias? 0.0 : 1.0;
 }
