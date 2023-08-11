@@ -85,6 +85,7 @@ Vec3f IntegrateEmu(Vec3f V, float roughness, float NdotV, Vec3f Ei) {
         float NoV = std::max(dot(N, V), 0.0f);
 
         // TODO: To calculate Eavg here - Bonus 1
+        // Should we divide this by pdf ?
         Eavg += Ei * NoL * 2.0;
     }
 
