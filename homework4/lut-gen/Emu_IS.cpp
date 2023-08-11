@@ -121,15 +121,16 @@ Vec3f IntegrateBRDF(Vec3f V, float roughness) {
     A = A / float(sample_count);
     B = B / float(sample_count);
 
+
+    // This is split sum LUT
+    // return Vec3f(A, B, 0.0);
+    
     // suppose Fresnel = 1.0, we'll consider Fresnel term in render program
     float F = A + B;
 
     // 1 - E(u)
     //F = 1.0 - F;
     return Vec3f(F, F, F);
-
-    // This is split sum LUT
-    //return Vec3f(A, B, 0.0);
 }
 
 int main() {
