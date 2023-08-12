@@ -143,35 +143,73 @@ vec3 EvalDirectionalLight(vec2 uv) {
   return Le;
 }
 
-bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) {
-  const float step = 0.5;
+bool outOfScreen(vec3 p)
+{
+  vec2 uv = GetScreenCoordinate(p);
+  return any(bvec4(lessThan(uv, vec2(0.0)), greaterThan(uv, vec2(1.0))));
+}
 
-  float t = 0.0;
-  for (int i = 0; i != 50; i += 1) 
+bool atFront(vec3 p)
+{
+  vec2 uv = GetScreenCoordinate(p);
+  float depthInGBuffer = GetGBufferDepth(uv);
+  float depthRayPoint = GetDepth(p);
+  return depthRayPoint < depthInGBuffer;
+}
+
+bool testHit(vec3 p0, vec3 p1, out vec3 hitPoint)
+{
+  float distanceFront = GetGBufferDepth(GetScreenCoordinate(p0)) - GetDepth(p0);
+  float distanceBehand = GetDepth(p1) - GetGBufferDepth(GetScreenCoordinate(p0));
+  if (distanceFront < 0.1 && distanceBehand < 0.1)
   {
-    vec3 p = ori + t * dir;
-    vec2 uv = GetScreenCoordinate(p);
-
-    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
-    {
-      // out of screen
-      return false;
-    }
-
-    float depthInGBuffer = GetGBufferDepth(uv);
-    float depthRayPoint = GetDepth(p);
-    if (depthRayPoint > depthInGBuffer)
-    {
-      // found hit point
-      hitPos = p;
-      return true;
-    }
-
-    t += step;
+    hitPoint = p0 + (p1 - p0) * distanceFront / (distanceFront + distanceBehand);
+    return true;
   }
-   
   return false;
 }
+
+bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) 
+{
+  bool hit = false;
+  float step = 0.8;
+  vec3 curPoint = ori;
+  bool wideHit = false;
+  for (int i = 0; i != 20; i += 1)
+  {
+    if (outOfScreen(curPoint))
+    {
+      break;
+    }
+
+    vec3 nextPoint = curPoint + step * dir;
+    if (atFront(nextPoint))
+    {
+      curPoint = nextPoint;
+      wideHit = false;
+    }
+    else
+    {
+      wideHit = true;
+      if (step < 0.001)
+      {
+        if (testHit(curPoint, nextPoint, hitPos))
+        {
+          hit = true;
+          break;
+        }
+      }
+    }
+
+    if (wideHit)
+    {
+      step /= 2.0;
+    }
+    
+  }
+  return hit;
+}
+
 
 #define SAMPLE_NUM 20
 
@@ -181,12 +219,21 @@ void main() {
   vec3 shadingPoint = vPosWorld.xyz;
   vec2 uvPos1 = GetScreenCoordinate(shadingPoint);
   vec3 L_indirect = vec3(0.0);
+
+  vec3 N = GetGBufferNormalWorld(uvPos1);
+  vec3 T, B;
+  LocalBasis(N, T, B);
+
   for(int i = 0; i != SAMPLE_NUM; i += 1)
   {
     // sample a direction
     float pdf = 0.0;
-    vec3 dir = normalize(SampleHemisphereCos(s, pdf));
-    //vec3 dir = normalize(SampleHemisphereUniform(s, pdf));
+    vec3 sampleDir = SampleHemisphereCos(s, pdf);
+    //vec3 sampleDir = SampleHemisphereUniform(s, pdf);
+
+    // tangent space to world space
+    vec3 dir = sampleDir.x * T + sampleDir.y * B + sampleDir.z * N;
+
     // test intersection
     vec3 hitPoint = vec3(0.0);
     bool hit = RayMarch(shadingPoint, dir, hitPoint);
