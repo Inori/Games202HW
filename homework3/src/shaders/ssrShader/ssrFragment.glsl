@@ -122,8 +122,14 @@ vec3 GetGBufferDiffuse(vec2 uv) {
  *
  */
 vec3 EvalDiffuse(vec3 wi, vec3 wo, vec2 uv) {
-  vec3 L = vec3(0.0);
-  return L;
+  vec3 diffuse = GetGBufferDiffuse(uv) / M_PI;
+  // already normalized in gbuffer pass
+  vec3 N = GetGBufferNormalWorld(uv);
+  wi = normalize(wi);
+  float cosTheta = max(dot(wi, N), 0.0);
+  // rending equation
+  vec3 Lo = diffuse * cosTheta;
+  return Lo;
 }
 
 /*
@@ -132,21 +138,79 @@ vec3 EvalDiffuse(vec3 wi, vec3 wo, vec2 uv) {
  *
  */
 vec3 EvalDirectionalLight(vec2 uv) {
-  vec3 Le = vec3(0.0);
+  float visibility = GetGBufferuShadow(uv);
+  vec3 Le = uLightRadiance * visibility;
   return Le;
 }
 
 bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) {
+  const float step = 0.5;
+
+  float t = 0.0;
+  for (int i = 0; i != 50; i += 1) 
+  {
+    vec3 p = ori + t * dir;
+    vec2 uv = GetScreenCoordinate(p);
+
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
+    {
+      // out of screen
+      return false;
+    }
+
+    float depthInGBuffer = GetGBufferDepth(uv);
+    float depthRayPoint = GetDepth(p);
+    if (depthRayPoint > depthInGBuffer)
+    {
+      // found hit point
+      hitPos = p;
+      return true;
+    }
+
+    t += step;
+  }
+   
   return false;
 }
 
-#define SAMPLE_NUM 1
+#define SAMPLE_NUM 20
 
 void main() {
   float s = InitRand(gl_FragCoord.xy);
 
-  vec3 L = vec3(0.0);
-  L = GetGBufferDiffuse(GetScreenCoordinate(vPosWorld.xyz));
+  vec3 shadingPoint = vPosWorld.xyz;
+  vec2 uvPos1 = GetScreenCoordinate(shadingPoint);
+  vec3 L_indirect = vec3(0.0);
+  for(int i = 0; i != SAMPLE_NUM; i += 1)
+  {
+    // sample a direction
+    float pdf = 0.0;
+    vec3 dir = normalize(SampleHemisphereCos(s, pdf));
+    //vec3 dir = normalize(SampleHemisphereUniform(s, pdf));
+    // test intersection
+    vec3 hitPoint = vec3(0.0);
+    bool hit = RayMarch(shadingPoint, dir, hitPoint);
+    if (hit)
+    {
+      vec3 wi = normalize(hitPoint - shadingPoint);
+      vec3 wo = normalize(uCameraPos - shadingPoint);
+
+      vec2 uvPos0 = GetScreenCoordinate(hitPoint);
+      // light path is reciprocal, so consider illuminate current shading point
+      L_indirect += (EvalDiffuse(normalize(uLightDir), -wi, uvPos0) / pdf) * EvalDiffuse(wi, wo, uvPos1) * uLightRadiance;
+    }
+
+  }
+  L_indirect /= float(SAMPLE_NUM);
+
+  vec3 wi = normalize(uLightDir);
+  vec3 wo = normalize(uCameraPos - shadingPoint);
+  vec3 L_direct = EvalDiffuse(wi, wo, uvPos1) * EvalDirectionalLight(uvPos1);
+
+  //vec3 L = L_direct;
+  vec3 L = L_direct + L_indirect;
+  
+
   vec3 color = pow(clamp(L, vec3(0.0), vec3(1.0)), vec3(1.0 / 2.2));
   gl_FragColor = vec4(vec3(color.rgb), 1.0);
 }

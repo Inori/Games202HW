@@ -17,7 +17,9 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 		.setPath(path)
 		.load(name + '.mtl', function (materials) {
 			materials.preload();
-			new THREE.OBJLoader(manager)
+			setTimeout(() => {
+				console.log("delayed for 100 ms.");
+				new THREE.OBJLoader(manager)
 				.setMaterials(materials)
 				.setPath(path)
 				.load(name + '.obj', function (object) {
@@ -59,5 +61,7 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 						}
 					});
 				}, onProgress, onError);
+			}, 100);
+
 		});
 }
