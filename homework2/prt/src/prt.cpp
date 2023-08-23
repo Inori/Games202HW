@@ -129,6 +129,16 @@ namespace ProjEnv
                     int index = (y * width + x) * channel;
                     Eigen::Array3f Le(images[i][index + 0], images[i][index + 1],
                                       images[i][index + 2]);
+
+                    auto lightFunc = [](double phi, double theta) -> double
+                        {
+                            Eigen::Array3d d = sh::ToVector(phi, theta);
+                            const auto wi = Vector3f(d.x(), d.y(), d.z());
+
+                            return 0.0;
+                        };
+
+                    auto coeffs = sh::ProjectFunction(SHOrder, lightFunc, 100);
                 }
             }
         }
