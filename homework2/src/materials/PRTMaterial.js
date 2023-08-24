@@ -4,11 +4,11 @@ class PRTMaterial extends Material {
 
         super({
             // 
-            // 'uSampler': { type: 'texture', value: color },
+            // 'uPrecomputeL': { type: 'texture', value: color },
             // 'uKs': { type: '3fv', value: specular },
             // 'uLightRadiance': { type: '3fv', value: lightIntensity },
 
-        }, [], vertexShader, fragmentShader, null);
+        }, ['aPrecomputeLT'], vertexShader, fragmentShader, null);
     }
 }
 

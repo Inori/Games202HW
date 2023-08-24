@@ -1,10 +1,12 @@
 attribute vec3 aVertexPosition;
 attribute vec3 aNormalPosition;
 //attribute vec2 aTextureCoord;
+attribute mat3 aPrecomputeLT;
 
 uniform mat4 uModelMatrix;
 uniform mat4 uViewMatrix;
 uniform mat4 uProjectionMatrix;
+uniform vec3 uPrecomputeL[9];
 
 varying highp vec3 vFragPos;
 varying highp vec3 vNormal;
