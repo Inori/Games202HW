@@ -66,7 +66,7 @@ async function GAMES202Main() {
 
 	// Add shapes
 	let skyBoxTransform = setTransform(0, 50, 50, 150, 150, 150);
-	let boxTransform = setTransform(0, 0, 0, 200, 200, 200);
+	let boxTransform = setTransform(-30, -100, -50, 60, 60, 60);
 	let box2Transform = setTransform(0, -10, 0, 20, 20, 20);
 
 	for (let i = 0; i < envmap.length; i++) {
@@ -85,37 +85,37 @@ async function GAMES202Main() {
 	loadOBJ(renderer, 'assets/testObj/', 'testObj', 'SkyBoxMaterial', skyBoxTransform);
 
 	// file parsing
-	// for (let i = 0; i < envmap.length; i++) {
+	for (let i = 0; i < envmap.length; i++) {
 
-	// 	let val = '';
-	// 	await this.loadShaderFile(envmap[i] + "/transport.txt").then(result => {
-	// 		val = result;
-	// 	});
+		let val = '';
+		await this.loadShaderFile(envmap[i] + "/transport.txt").then(result => {
+			val = result;
+		});
 
-	// 	let preArray = val.split(/[(\r\n)\r\n' ']+/);
-	// 	let lineArray = [];
-	// 	precomputeLT[i] = []
-	// 	for (let j = 1; j <= Number(preArray.length) - 2; j++) {
-	// 		precomputeLT[i][j - 1] = Number(preArray[j])
-	// 	}
-	// 	await this.loadShaderFile(envmap[i] + "/light.txt").then(result => {
-	// 		val = result;
-	// 	});
+		let preArray = val.split(/[(\r\n)\r\n' ']+/);
+		let lineArray = [];
+		precomputeLT[i] = []
+		for (let j = 1; j <= Number(preArray.length) - 2; j++) {
+			precomputeLT[i][j - 1] = Number(preArray[j])
+		}
+		await this.loadShaderFile(envmap[i] + "/light.txt").then(result => {
+			val = result;
+		});
 
-	// 	precomputeL[i] = val.split(/[(\r\n)\r\n]+/);
-	// 	precomputeL[i].pop();
-	// 	for (let j = 0; j < 9; j++) {
-	// 		lineArray = precomputeL[i][j].split(' ');
-	// 		for (let k = 0; k < 3; k++) {
-	// 			lineArray[k] = Number(lineArray[k]);
-	// 		}
-	// 		precomputeL[i][j] = lineArray;
-	// 	}
-	// }
+		precomputeL[i] = val.split(/[(\r\n)\r\n]+/);
+		precomputeL[i].pop();
+		for (let j = 0; j < 9; j++) {
+			lineArray = precomputeL[i][j].split(' ');
+			for (let k = 0; k < 3; k++) {
+				lineArray[k] = Number(lineArray[k]);
+			}
+			precomputeL[i][j] = lineArray;
+		}
+	}
 
 	// TODO: load model - Add your Material here
-	// loadOBJ(renderer, 'assets/bunny/', 'bunny', 'addYourPRTMaterial', boxTransform);
-	// loadOBJ(renderer, 'assets/bunny/', 'bunny', 'addYourPRTMaterial', box2Transform);
+	loadOBJ(renderer, 'assets/mary/', 'mary', 'PRTMaterial', boxTransform);
+	//loadOBJ(renderer, 'assets/mary/', 'mary', 'PRTMaterial', box2Transform);
 
 	function createGUI() {
 		const gui = new dat.gui.GUI();
