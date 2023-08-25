@@ -220,36 +220,72 @@ public:
                 const auto wi = Vector3f(d.x(), d.y(), d.z());
 
                 double cosTheta = n.dot(wi);
-                if (cosTheta > 0.0)
+                if (cosTheta <= 0.0)
                 {
-                    Ray3f ray(point, wi);
-                    Intersection itsct;
-                    bool hit = scene->rayIntersect(ray, itsct);
-                    if (hit)
+                    continue;
+                }
+
+                Ray3f ray(point, wi);
+                Intersection itsct;
+                bool hit = scene->rayIntersect(ray, itsct);
+                if (hit)
+                {
+                    // indirect light part
+                    const Vector3f& bary = itsct.bary;
+
+                    Eigen::MatrixXf coeffs = {};
+                    int bounceLeft = bounce - 1;
+                    if (bounceLeft == 0)
                     {
-                        const Vector3f& bary = itsct.bary;
+                        const auto sh0 = m_TransportSHCoeffs.col(itsct.tri_index.x());
+                        const auto sh1 = m_TransportSHCoeffs.col(itsct.tri_index.y());
+                        const auto sh2 = m_TransportSHCoeffs.col(itsct.tri_index.z());
 
-                        Eigen::MatrixXf coeffs = {};
-                        int bounceLeft = bounce - 1;
-                        if (bounceLeft == 0)
-                        {
-                            const auto sh0 = m_TransportSHCoeffs.col(itsct.tri_index.x());
-                            const auto sh1 = m_TransportSHCoeffs.col(itsct.tri_index.y());
-                            const auto sh2 = m_TransportSHCoeffs.col(itsct.tri_index.z());
-                            
-                            coeffs = bary.x() * sh0 + bary.y() * sh1 + bary.z() * sh2;
-                        }
-                        else
-                        {
-                            const auto n0 = mesh->getVertexNormals().col(itsct.tri_index.x()).normalized();
-                            const auto n1 = mesh->getVertexNormals().col(itsct.tri_index.y()).normalized();
-                            const auto n2 = mesh->getVertexNormals().col(itsct.tri_index.z()).normalized();
-                            const auto itNormal = bary.x() * n0 + bary.y() * n1 + bary.z() * n2;
-                            coeffs = indirectVertexSH(scene, itsct.p, itNormal, bounceLeft);
-                        }
-
-                        result += coeffs * cosTheta;
+                        coeffs = bary.x() * sh0 + bary.y() * sh1 + bary.z() * sh2;
                     }
+                    else
+                    {
+                        const auto n0 = mesh->getVertexNormals().col(itsct.tri_index.x()).normalized();
+                        const auto n1 = mesh->getVertexNormals().col(itsct.tri_index.y()).normalized();
+                        const auto n2 = mesh->getVertexNormals().col(itsct.tri_index.z()).normalized();
+                        const auto itNormal = bary.x() * n0 + bary.y() * n1 + bary.z() * n2;
+                        coeffs = indirectVertexSH(scene, itsct.p, itNormal, bounceLeft);
+                    }
+
+                    result += coeffs * cosTheta;
+                }
+                else
+                {
+                    // direct light part
+                    // since we don't know we are currently on vertex or surface,
+                    // it's hard to query previously computed SH coefficients,
+                    // so we just do calculation again
+                    auto shFunc = [&](double phi, double theta) -> double {
+                        Eigen::Array3d d = sh::ToVector(phi, theta).normalized();
+                        const auto wi = Vector3f(d.x(), d.y(), d.z());
+
+                        double result = 0.0;
+
+                        double cosTheta = n.dot(wi);
+                        if (cosTheta > 0.0)
+                        {
+                            Ray3f ray(point, wi);
+                            bool hit = scene->rayIntersect(ray);
+                            if (!hit)
+                            {
+                                result = cosTheta;
+                            }
+                        }
+
+                        return result;
+                    };
+                    auto shCoeff = sh::ProjectFunction(SHOrder, shFunc, m_SampleCount);
+                    Eigen::MatrixXf directCoeffs = Eigen::MatrixXf::Zero(SHCoeffLength, 1);
+                    for (int j = 0; j < shCoeff->size(); j++)
+                    {
+                        directCoeffs.col(0).coeffRef(j) = (*shCoeff)[j];
+                    }
+                    result += directCoeffs;
                 }
             }
         }
