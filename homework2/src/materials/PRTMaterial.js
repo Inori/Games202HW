@@ -1,5 +1,7 @@
 class PRTMaterial extends Material {
 
+    lastEnvMapId = 0;
+
     constructor(vertexShader, fragmentShader) {
 
         let curPrecomputeL = precomputeL[guiParams.envmapId];
@@ -10,8 +12,30 @@ class PRTMaterial extends Material {
             'uPrecomputeLG': { type: 'matrix3fv', value: precomputeLMat[1] },
             'uPrecomputeLB': { type: 'matrix3fv', value: precomputeLMat[2] },
         }, ['aPrecomputeLT'], vertexShader, fragmentShader, null);
+
+        this.lastEnvMapId = guiParams.envmapId;
+    }
+
+    updateUniforms() {
+        if (guiParams.envmapId == this.lastEnvMapId)
+        {
+            return;
+        }
+
+        this.lastEnvMapId = guiParams.envmapId;
+
+        let curPrecomputeL = precomputeL[guiParams.envmapId];
+        let precomputeLMat = getMat3ValueFromRGB(curPrecomputeL);
+        this.uniforms = {
+            // 
+            'uPrecomputeLR': { type: 'matrix3fv', value: precomputeLMat[0] },
+            'uPrecomputeLG': { type: 'matrix3fv', value: precomputeLMat[1] },
+            'uPrecomputeLB': { type: 'matrix3fv', value: precomputeLMat[2] },
+        };
     }
 }
+
+
 
 async function buildPRTMaterial(vertexPath, fragmentPath) {
 

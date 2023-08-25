@@ -19,6 +19,11 @@ class Material {
         this.frameBuffer = frameBuffer;
     }
 
+    updateUniforms()
+    {
+        
+    }
+
     setMeshAttribs(extraAttribs) {
     
         for (let i = 0; i < extraAttribs.length; i++) {
