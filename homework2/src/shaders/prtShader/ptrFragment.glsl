@@ -10,11 +10,11 @@ precision mediump float;
 // uniform vec3 uCameraPos;
 // uniform vec3 uLightRadiance;
 
-varying highp vec3 vFragPos;
+varying highp vec3 vColor;
 varying highp vec3 vNormal;
 
 
 void main(void) {
 
-  gl_FragColor = vec4(1.0);
+  gl_FragColor = vec4(vColor, 1.0);
 }

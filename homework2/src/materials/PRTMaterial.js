@@ -1,23 +1,24 @@
 class PRTMaterial extends Material {
 
-    constructor(precomputeL, precomputeLT, vertexShader, fragmentShader) {
+    constructor(vertexShader, fragmentShader) {
 
+        let curPrecomputeL = precomputeL[guiParams.envmapId];
+        let precomputeLMat = getMat3ValueFromRGB(curPrecomputeL);
         super({
             // 
-            // 'uPrecomputeL': { type: 'texture', value: color },
-            // 'uKs': { type: '3fv', value: specular },
-            // 'uLightRadiance': { type: '3fv', value: lightIntensity },
-
+            'uPrecomputeLR': { type: 'matrix3fv', value: precomputeLMat[0] },
+            'uPrecomputeLG': { type: 'matrix3fv', value: precomputeLMat[1] },
+            'uPrecomputeLB': { type: 'matrix3fv', value: precomputeLMat[2] },
         }, ['aPrecomputeLT'], vertexShader, fragmentShader, null);
     }
 }
 
-async function buildPRTMaterial(precomputeL, precomputeLT, vertexPath, fragmentPath) {
+async function buildPRTMaterial(vertexPath, fragmentPath) {
 
 
     let vertexShader = await getShaderString(vertexPath);
     let fragmentShader = await getShaderString(fragmentPath);
 
-    return new PRTMaterial(precomputeL, precomputeLT, vertexShader, fragmentShader);
+    return new PRTMaterial(vertexShader, fragmentShader);
 
 }

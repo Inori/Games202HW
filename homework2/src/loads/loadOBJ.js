@@ -61,7 +61,7 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 									break;
 								// TODO: Add your PRTmaterial here
 								case 'PRTMaterial':
-									material = buildPRTMaterial(precomputeL, precomputeLT,
+									material = buildPRTMaterial(
 										 "./src/shaders/prtShader/ptrVertex.glsl", 
 										 "./src/shaders/prtShader/ptrFragment.glsl");
 									break;
