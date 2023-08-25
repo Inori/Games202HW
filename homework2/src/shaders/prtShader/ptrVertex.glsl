@@ -15,7 +15,10 @@ varying highp vec3 vNormal;
 
 void main(void) {
 
-  vColor = vec3(uPrecomputeLG[0][0], uPrecomputeLG[0][1], uPrecomputeLG[0][2]);
+  float r = dot(uPrecomputeLR[0], aPrecomputeLT[0]) + dot(uPrecomputeLR[1], aPrecomputeLT[1]) + dot(uPrecomputeLR[2], aPrecomputeLT[2]);
+  float g = dot(uPrecomputeLG[0], aPrecomputeLT[0]) + dot(uPrecomputeLG[1], aPrecomputeLT[1]) + dot(uPrecomputeLG[2], aPrecomputeLT[2]);
+  float b = dot(uPrecomputeLB[0], aPrecomputeLT[0]) + dot(uPrecomputeLB[1], aPrecomputeLT[1]) + dot(uPrecomputeLB[2], aPrecomputeLT[2]);
+  vColor = vec3(r, g, b);
   vNormal = (uModelMatrix * vec4(aNormalPosition, 0.0)).xyz;
 
   gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix *

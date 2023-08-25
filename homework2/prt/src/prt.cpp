@@ -198,6 +198,37 @@ public:
 
         const Normal3f& n = normal.normalized();
 
+        // direct light part
+        // since we don't know we are currently on vertex or surface,
+        // it's hard to query previously computed SH coefficients,
+        // so we just do calculation again
+        auto shFunc = [&](double phi, double theta) -> double {
+            Eigen::Array3d d = sh::ToVector(phi, theta).normalized();
+            const auto wi = Vector3f(d.x(), d.y(), d.z());
+
+            double result = 0.0;
+
+            double cosTheta = n.dot(wi);
+            if (cosTheta > 0.0)
+            {
+                Ray3f ray(point, wi);
+                bool hit = scene->rayIntersect(ray);
+                if (!hit)
+                {
+                    result = cosTheta;
+                }
+            }
+
+            return result;
+            };
+        auto shCoeff = sh::ProjectFunction(SHOrder, shFunc, m_SampleCount);
+        Eigen::MatrixXf directCoeffs = Eigen::MatrixXf::Zero(SHCoeffLength, 1);
+        for (int j = 0; j < shCoeff->size(); j++)
+        {
+            directCoeffs.col(0).coeffRef(j) = (*shCoeff)[j];
+        }
+        result += directCoeffs;
+
         const int sampleCount = m_SampleCount / 5;
         const int sample_side = static_cast<int>(floor(sqrt(sampleCount)));
 
@@ -253,39 +284,6 @@ public:
                     }
 
                     result += coeffs * cosTheta;
-                }
-                else
-                {
-                    // direct light part
-                    // since we don't know we are currently on vertex or surface,
-                    // it's hard to query previously computed SH coefficients,
-                    // so we just do calculation again
-                    auto shFunc = [&](double phi, double theta) -> double {
-                        Eigen::Array3d d = sh::ToVector(phi, theta).normalized();
-                        const auto wi = Vector3f(d.x(), d.y(), d.z());
-
-                        double result = 0.0;
-
-                        double cosTheta = n.dot(wi);
-                        if (cosTheta > 0.0)
-                        {
-                            Ray3f ray(point, wi);
-                            bool hit = scene->rayIntersect(ray);
-                            if (!hit)
-                            {
-                                result = cosTheta;
-                            }
-                        }
-
-                        return result;
-                    };
-                    auto shCoeff = sh::ProjectFunction(SHOrder, shFunc, m_SampleCount);
-                    Eigen::MatrixXf directCoeffs = Eigen::MatrixXf::Zero(SHCoeffLength, 1);
-                    for (int j = 0; j < shCoeff->size(); j++)
-                    {
-                        directCoeffs.col(0).coeffRef(j) = (*shCoeff)[j];
-                    }
-                    result += directCoeffs;
                 }
             }
         }
