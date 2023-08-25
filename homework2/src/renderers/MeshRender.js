@@ -147,7 +147,7 @@ class MeshRender {
 	bindMaterialParameters() {
 		const gl = this.gl;
 
-		this.material.updateUniforms();
+		//this.material.updateUniforms();
 
 		let textureNum = 0;
 		for (let k in this.material.uniforms) {

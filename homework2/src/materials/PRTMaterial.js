@@ -26,11 +26,15 @@ class PRTMaterial extends Material {
 
         let curPrecomputeL = precomputeL[guiParams.envmapId];
         let precomputeLMat = getMat3ValueFromRGB(curPrecomputeL);
+        this.setPrecomputeL(precomputeLMat);
+    }
+
+    setPrecomputeL(rgbMat3) {
         this.uniforms = {
             // 
-            'uPrecomputeLR': { type: 'matrix3fv', value: precomputeLMat[0] },
-            'uPrecomputeLG': { type: 'matrix3fv', value: precomputeLMat[1] },
-            'uPrecomputeLB': { type: 'matrix3fv', value: precomputeLMat[2] },
+            'uPrecomputeLR': { type: 'matrix3fv', value: rgbMat3[0] },
+            'uPrecomputeLG': { type: 'matrix3fv', value: rgbMat3[1] },
+            'uPrecomputeLB': { type: 'matrix3fv', value: rgbMat3[2] },
         };
     }
 }
