@@ -169,6 +169,7 @@ Buffer2D<Float3> Denoiser::Filter(const FrameInfo &frameInfo) {
     return filteredImage;
 }
 
+
 void Denoiser::Init(const FrameInfo &frameInfo, const Buffer2D<Float3> &filteredColor) {
     m_accColor.Copy(filteredColor);
     int height = m_accColor.m_height;
