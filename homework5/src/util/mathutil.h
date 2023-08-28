@@ -11,6 +11,10 @@ inline float SafeAcos(const float &v) {
     return std::acos(std::min(std::max(v, 0.f), 1.f));
 }
 
+inline bool EqualFloat(float a, float b) {
+    return std::abs(a - b) < std::numeric_limits<float>::epsilon();
+}
+
 class Float3 {
   public:
     enum EType { Vector, Point };

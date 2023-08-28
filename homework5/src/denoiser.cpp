@@ -1,6 +1,7 @@
 #include "denoiser.h"
 #include <cmath>
 
+
 Denoiser::Denoiser() : m_useTemportal(false) {}
 
 void Denoiser::Reprojection(const FrameInfo &frameInfo) {
@@ -14,8 +15,45 @@ void Denoiser::Reprojection(const FrameInfo &frameInfo) {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             // TODO: Reproject
-            m_valid(x, y) = false;
-            m_misc(x, y) = Float3(0.f);
+
+            auto curObjId = frameInfo.m_id(x, y);
+            if (curObjId < 0.0)
+            {
+                // no object, use current background
+                m_valid(x, y) = false;
+                //m_misc(x, y) = frameInfo.m_beauty(x, y);
+                continue;
+            }
+
+            auto curPosition = frameInfo.m_position(x, y);
+            int objId = static_cast<int>(curObjId);
+            auto curObjectToWorld = frameInfo.m_matrix[objId];
+            auto preObjectToWorld = m_preFrameInfo.m_matrix[objId];
+            auto M = preWorldToScreen * preObjectToWorld * Inverse(curObjectToWorld);
+            auto preScreenPosition = M(curPosition, Float3::Point);
+
+            bool outOfScreen = preScreenPosition.x < 0.0 || preScreenPosition.y < 0.0 ||
+                               preScreenPosition.x >= width ||
+                               preScreenPosition.y >= height;
+            if (outOfScreen) 
+            {
+                m_valid(x, y) = false;
+                //m_misc(x, y) = frameInfo.m_beauty(x, y);
+                continue;
+            }
+
+            auto preObjId = m_preFrameInfo.m_id(preScreenPosition.x, preScreenPosition.y);
+            bool diffObjId = !EqualFloat(preObjId, curObjId);
+            if (diffObjId) 
+            {
+                m_valid(x, y) = false;
+                //m_misc(x, y) = frameInfo.m_beauty(x, y);
+                continue;
+            }
+
+            m_valid(x, y) = true;
+            m_misc(x, y) =
+                m_preFrameInfo.m_beauty(preScreenPosition.x, preScreenPosition.y);
         }
     }
     std::swap(m_misc, m_accColor);
@@ -29,10 +67,36 @@ void Denoiser::TemporalAccumulation(const Buffer2D<Float3> &curFilteredColor) {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             // TODO: Temporal clamp
+
+            Float3 sum = 0.0;
+            Float3 sqrSum = 0.0;
+            float count = 0.0;
+            for (int dy = -kernelRadius; dy <= kernelRadius; ++dy) 
+            {
+                for (int dx = -kernelRadius; dx <= kernelRadius; ++dx) 
+                {
+                    int x_j = x + dx;
+                    int y_j = y + dy;
+                    if (x_j < 0 || y_j < 0 || x_j >= width || y_j >= height) 
+                    {
+                        continue;
+                    }
+
+                    sum += curFilteredColor(x_j, y_j);
+                    sqrSum += Sqr(curFilteredColor(x_j, y_j));
+                    count += 1.0;
+                }
+            }
+            
+            Float3 mean = sum / count;
+            Float3 variance = sqrSum / count - Sqr(mean);
+
             Float3 color = m_accColor(x, y);
+            Float3 preColor = Clamp(color, mean - variance * m_colorBoxK, mean + variance * m_colorBoxK);
+
             // TODO: Exponential moving average
-            float alpha = 1.0f;
-            m_misc(x, y) = Lerp(color, curFilteredColor(x, y), alpha);
+            float alpha = m_valid(x, y) ? m_alpha : 1.0;
+            m_misc(x, y) = Lerp(preColor, curFilteredColor(x, y), alpha);
         }
     }
     std::swap(m_misc, m_accColor);
@@ -56,9 +120,9 @@ Buffer2D<Float3> Denoiser::Filter(const FrameInfo &frameInfo) {
             auto ni = frameInfo.m_normal(x, y);
             auto ci = frameInfo.m_beauty(x, y);
             
-            for (int dy = -(kernelRadius - 1); dy <= (kernelRadius - 1); ++dy)
+            for (int dy = -kernelRadius; dy <= kernelRadius; ++dy)
             {
-                for (int dx = -(kernelRadius - 1); dx <= (kernelRadius - 1); ++dx)
+                for (int dx = -kernelRadius; dx <= kernelRadius; ++dx)
                 {
                     int x_j = x + dx;
                     int y_j = y + dy;
